@@ -32,7 +32,7 @@ setup(
     name='gitlab_remote_include',
     version=version,
     description='Sphinx plugin - Gitlab remote include',
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     license='Apache v2',
     url='',
     author='Sergio Tonani',
