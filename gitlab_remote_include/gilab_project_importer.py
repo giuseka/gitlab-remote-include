@@ -72,7 +72,8 @@ class GilabProjectImporter:
                             if file_name.find('.rst') > 0:
                                 f.write(data.replace(replace_from.encode('utf-8'), ('/'+replace_to+'/').encode('utf-8')))
                             elif file_name.find('.md') > 0:
-                                f.write(data.replace(replace_from.encode('utf-8'), ('/'+replace_to).encode('utf-8')))
+                                f.write(data.replace(replace_from.encode('utf-8'), (replace_to).encode('utf-8')))
+                                #f.write(data.replace(replace_from.encode('utf-8'), (replace_to).encode('utf-8')))
                             else:
                                 f.write(data)
 
@@ -88,7 +89,7 @@ class GilabProjectImporter:
             gitlab_project_path = prj['path']
             # project_name = gitlab_project_id
             project_local_path = f'{self._base_path}/{alias}/docs'
-            replace_to = f'{os.getcwd()}/{self._base_path}/{alias}/{gitlab_project_path}'
+            replace_to = f'{os.getcwd()}/{self._base_path}/{alias}{gitlab_project_path}'
 
             if not os.path.exists(project_local_path):
                 os.makedirs(project_local_path)
