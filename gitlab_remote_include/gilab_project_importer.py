@@ -17,7 +17,7 @@ from gitlab import Gitlab
 
 class GilabProjectImporter:
     def __init__(self, gitlab_uri: str, gitlab_token: str, timeout: int = 5, ssl_verify: bool = True):
-        self._base_path = f'source/_'
+        self._base_path = f'source/_remote'
         self._token = gitlab_token
         self._uri = gitlab_uri
         gl_auth = {

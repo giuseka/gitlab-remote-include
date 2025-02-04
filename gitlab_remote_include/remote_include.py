@@ -81,7 +81,7 @@ def read_nodes(app, docname, source):
         '*(:replace-in: (.*))'
         ')',
     ]
-    re_sub_string = f'.. include:: {back}_/\g<6>/\g<2>'
+    re_sub_string = f'.. include:: {back}_remote/\g<6>/\g<2>'
     _read_remote_include(app, docname, source, '[\s\n]'.join(re_string), re_sub_string)
 
     # md
@@ -96,7 +96,7 @@ def read_nodes(app, docname, source):
         '*(:replace-in: (.*))'
         ')',
     ]
-    re_sub_string = f'.. include:: {back}_/\g<6>/\g<2>\n   :parser: myst_parser.sphinx_'
+    re_sub_string = f'.. include:: {back}_remote/\g<6>/\g<2>\n   :parser: myst_parser.sphinx_'
     _read_remote_include(app, docname, source, '[\s\n]'.join(re_string), re_sub_string)
 
 
