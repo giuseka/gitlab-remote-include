@@ -82,9 +82,14 @@ class GilabProjectImporter:
         for prj in self._gitlab_projects:
             alias = prj['alias']
             gitlab_project = self._client.projects.get(prj['id'])
+            local_path = f'{self._base_path}/{alias}'
             try:
-                self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'])
-                logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
+                if not os.path.exists(local_path):
+                    os.makedirs(local_path)
+                    self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'])
+                    logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
+                else:
+                    logger.info(f'Gitlab project {prj["id"]} branch {prj["branch"]} already downloaded')
             except Exception as e:
                 logger.warning(f'Download gitlab project {prj["id"]} branch {prj["branch"]} error: {e}')
 
