@@ -13,9 +13,15 @@
 
 import os
 from gitlab import Gitlab
+from sphinx.util import logging
+import gevent
+
+logger = logging.getLogger(__name__)
 
 
 class GilabProjectImporter:
+    VALID_FILE_TYPE = ['rst', 'md', 'png', 'jpg', 'jpeg', 'svg', 'drawio']
+
     def __init__(self, gitlab_uri: str, gitlab_token: str, timeout: int = 5, ssl_verify: bool = True):
         self._base_path = f'source/_remote'
         self._token = gitlab_token
@@ -39,66 +45,46 @@ class GilabProjectImporter:
             'alias': alias,
             'id': project_id,
             'branch': project_branch,
-            'path': project_path,
-            'replace_from': replace_from
+            #'path': project_path,
+            #'replace_from': replace_from
         })
 
-    def _download_gitlab_file(self, download_path, gitlab_project, path='docs', branch='master',
-                              replace_from='./', replace_to='./'):
+    def _download_gitlab_item(self, item, download_path, gitlab_project, branch):
+        # create local folder
+        if item['type'] == 'tree':
+            folder_name = item['path']
+            folder_local_name = f'{self._base_path}/{download_path}/{folder_name}'
+            if not os.path.exists(folder_local_name):
+                os.makedirs(folder_local_name)
+            self._download_gitlab_tree(download_path, gitlab_project, path=folder_name, branch=branch)
+
+        # create local file
+        elif item['type'] == 'blob':
+            file_name = item['path']
+            if file_name.split('.')[-1] not in self.VALID_FILE_TYPE:
+                return
+            file_local_name = f'{self._base_path}/{download_path}/{file_name}'
+            if not os.path.exists(file_local_name):
+                with open(file_local_name, 'wb') as f:
+                    gitlab_project.files.raw(file_path=file_name, ref=branch, streamed=True, action=f.write)
+
+        logger.info(f'...Write item {item["path"]}')
+
+    def _download_gitlab_tree(self, download_path, gitlab_project, path='/', branch='master'):
         items = gitlab_project.repository_tree(path=path, ref=branch, get_all=True)
-        for item in items:
-            # create local folder
-            if item['type'] == 'tree':
-                folder_name = item['path']
-                folder_local_name = f'{self._base_path}/{download_path}/{folder_name}'
-                if not os.path.exists(folder_local_name):
-                    os.makedirs(folder_local_name)
-                self._download_gitlab_file(
-                    download_path,
-                    gitlab_project,
-                    path=folder_name,
-                    branch=branch,
-                    replace_from=replace_from,
-                    replace_to=replace_to
-                )
 
-            # create local file
-            elif item['type'] == 'blob':
-                file_name = item['path']
-                file_local_name = f'{self._base_path}/{download_path}/{file_name}'
-                if not os.path.exists(file_local_name):
-                    with open(file_local_name, 'wb') as f:
-                        def action(data):
-                            if file_name.find('.rst') > 0:
-                                f.write(data.replace(replace_from.encode('utf-8'), ('/'+replace_to+'/').encode('utf-8')))
-                            elif file_name.find('.md') > 0:
-                                f.write(data.replace(replace_from.encode('utf-8'), (replace_to).encode('utf-8')))
-                                #f.write(data.replace(replace_from.encode('utf-8'), (replace_to).encode('utf-8')))
-                            else:
-                                f.write(data)
-
-                        gitlab_project.files.raw(file_path=file_name, ref=branch, streamed=True, action=action)
-                        # print(f'- download file {file_name} from repo {gitlab_project.name}')
+        #for item in items:
+        jobs = [gevent.spawn(self._download_gitlab_item, item, download_path, gitlab_project, branch)
+                             for item in items]
+        _ = gevent.joinall(jobs, timeout=60)
 
     def run(self):
         for prj in self._gitlab_projects:
-            # path_prefix = prj['path_prefix']
             alias = prj['alias']
-            # gitlab_project_id = prj['id']
             gitlab_project = self._client.projects.get(prj['id'])
-            gitlab_project_path = prj['path']
-            # project_name = gitlab_project_id
-            project_local_path = f'{self._base_path}/{alias}/docs'
-            replace_to = f'{os.getcwd()}/{self._base_path}/{alias}{gitlab_project_path}'
+            try:
+                self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'])
+                logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
+            except Exception as e:
+                logger.warning(f'Download gitlab project {prj["id"]} branch {prj["branch"]} error: {e}')
 
-            if not os.path.exists(project_local_path):
-                os.makedirs(project_local_path)
-            self._download_gitlab_file(
-                alias,
-                gitlab_project,
-                path=prj['path'],
-                branch=prj['branch'],
-                replace_from=prj['replace_from'],
-                replace_to=replace_to,
-            )
-            print(f'download project: {prj["id"]}')
