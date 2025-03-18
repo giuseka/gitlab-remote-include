@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class GilabProjectImporter:
-    VALID_FILE_TYPE = ['rst', 'md', 'png', 'jpg', 'jpeg', 'svg', 'drawio']
+    VALID_FILE_TYPE = ['rst', 'md', 'png', 'jpg', 'jpeg', 'svg', 'drawio', 'webp']
 
     def __init__(self, gitlab_uri: str, gitlab_token: str, timeout: int = 5, ssl_verify: bool = True):
         self._base_path = f'source/_remote'

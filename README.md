@@ -35,8 +35,15 @@ extensions = [
 Add the configuration in conf.py
 
 ```
-remote_include_token = '<gitlab token>'
-remote_include_uri = 'https://gitlab-cloud.cervedgroup.com'
+gitlab_remote_include = {
+    'gitlabcloud': {
+        'uri': 'https://gitlab-cloud.cervedgroup.com',
+        'token': '...',
+        'projects': [
+            {'id': 147, 'branch': 'master', 'alias': 'observability-platform'}
+        ]
+    }
+}
 ```
 
 ## Links
