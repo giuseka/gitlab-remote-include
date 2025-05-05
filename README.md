@@ -11,9 +11,7 @@ To test the module, you can make a new virtualenv and then install your package:
 ```console
 python3 -m venv test-sphinx
 . test-sphinx/bin/activate
-python setup.py install
-
-python setup.py build
+python -m pip install --no-cache git+https://github.com/giuseka/gitlab-remote-include.git
 ```
 
 ## Getting started
@@ -37,7 +35,7 @@ Add the configuration in conf.py
 ```
 gitlab_remote_include = {
     'gitlabcloud': {
-        'uri': 'https://gitlab-cloud.cervedgroup.com',
+        'uri': 'https://gitlab.local.com',
         'token': '...',
         'projects': [
             {'id': 147, 'branch': 'master', 'alias': 'observability-platform'}

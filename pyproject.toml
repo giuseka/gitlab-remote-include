@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gitlab_remote_include"
+version = "0.1.0"
+authors = [
+  { name="giuseka", email="sergio.tonani@gmail.com" },
+]
+maintainers = [
+  { name="giuseka", email="sergio.tonani@gmail.com" },
+]
+description = "Sphinx plugin - Gitlab remote include"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
+keywords = ["sphinx", "gitlab"]
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "sphinx==8.2.3",
+    "python-gitlab==5.6.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/giuseka/gitlab-remote-include.git"
+Issues = "https://github.com/giuseka/gitlab-remote-include/issues"
