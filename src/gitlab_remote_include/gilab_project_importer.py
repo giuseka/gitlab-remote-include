@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 class GilabProjectImporter:
     VALID_FILE_TYPE = ['rst', 'md', 'png', 'jpg', 'jpeg', 'svg', 'drawio', 'webp']
 
-    def __init__(self, gitlab_uri: str, gitlab_token: str, timeout: int = 5, ssl_verify: bool = True):
+    def __init__(self, gitlab_uri: str, gitlab_token: str, timeout: int = 5, ssl_verify: bool = True,
+                 file_types: list = None):
         self._base_path = f'source/_remote'
         self._token = gitlab_token
         self._uri = gitlab_uri
@@ -34,34 +35,35 @@ class GilabProjectImporter:
             'timeout': timeout
         }
         self._gitlab_projects = []
+        self._file_types = file_types if file_types else self.VALID_FILE_TYPE
 
         # create client
         self._client = Gitlab(url=self._uri, **gl_auth)
         self._client.auth()
 
-    def add_project(self, alias: str, project_id: str, project_branch: str = 'master',
-                    project_path: str = 'docs', replace_from: str = ''):
+    def add_project(self, alias: str, project_id: str, project_branch: str = 'master', exclude: list = None):
         self._gitlab_projects.append({
             'alias': alias,
             'id': project_id,
             'branch': project_branch,
-            #'path': project_path,
-            #'replace_from': replace_from
+            'exclude': exclude
         })
 
-    def _download_gitlab_item(self, item, download_path, gitlab_project, branch):
+    def _download_gitlab_item(self, item, download_path, gitlab_project, branch, exclude):
         # create local folder
         if item['type'] == 'tree':
             folder_name = item['path']
+            if folder_name in exclude:
+                return
             folder_local_name = f'{self._base_path}/{download_path}/{folder_name}'
             if not os.path.exists(folder_local_name):
                 os.makedirs(folder_local_name)
-            self._download_gitlab_tree(download_path, gitlab_project, path=folder_name, branch=branch)
+            self._download_gitlab_tree(download_path, gitlab_project, path=folder_name, branch=branch, exclude=exclude)
 
         # create local file
         elif item['type'] == 'blob':
             file_name = item['path']
-            if file_name.split('.')[-1] not in self.VALID_FILE_TYPE:
+            if file_name.split('.')[-1] not in self._file_types:
                 return
             file_local_name = f'{self._base_path}/{download_path}/{file_name}'
             if not os.path.exists(file_local_name):
@@ -70,11 +72,11 @@ class GilabProjectImporter:
 
         logger.info(f'...Write item {item["path"]}')
 
-    def _download_gitlab_tree(self, download_path, gitlab_project, path='/', branch='master'):
+    def _download_gitlab_tree(self, download_path, gitlab_project, path='/', branch='master', exclude=None):
         items = gitlab_project.repository_tree(path=path, ref=branch, get_all=True)
 
         #for item in items:
-        jobs = [gevent.spawn(self._download_gitlab_item, item, download_path, gitlab_project, branch)
+        jobs = [gevent.spawn(self._download_gitlab_item, item, download_path, gitlab_project, branch, exclude)
                              for item in items]
         _ = gevent.joinall(jobs, timeout=60)
 
@@ -86,10 +88,9 @@ class GilabProjectImporter:
             try:
                 if not os.path.exists(local_path):
                     os.makedirs(local_path)
-                    self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'])
+                    self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'], exclude=prj['exclude'])
                     logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
                 else:
                     logger.info(f'Gitlab project {prj["id"]} branch {prj["branch"]} already downloaded')
             except Exception as e:
-                logger.warning(f'Download gitlab project {prj["id"]} branch {prj["branch"]} error: {e}')
-
+                logger.warning(f'Download gitlab project {prj["id"]} branch {prj["branch"]} error: {e}', exc_info=True)
