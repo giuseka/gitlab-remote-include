@@ -41,12 +41,15 @@ class GilabProjectImporter:
         self._client = Gitlab(url=self._uri, **gl_auth)
         self._client.auth()
 
-    def add_project(self, alias: str, project_id: str, project_branch: str = 'master', exclude: list = None):
+    def add_project(self, alias: str, project_id: str, project_branch: str = 'master', exclude: list = None,
+                    script: str = None, env: dict = None):
         self._gitlab_projects.append({
             'alias': alias,
             'id': project_id,
             'branch': project_branch,
-            'exclude': exclude
+            'exclude': exclude,
+            'script': script,
+            'env': env
         })
 
     def _download_gitlab_item(self, item, download_path, gitlab_project, branch, exclude):
@@ -83,12 +86,18 @@ class GilabProjectImporter:
     def run(self):
         for prj in self._gitlab_projects:
             alias = prj['alias']
+            script = prj['script']
+            env = prj['env']
             gitlab_project = self._client.projects.get(prj['id'])
             local_path = f'{self._base_path}/{alias}'
             try:
                 if not os.path.exists(local_path):
                     os.makedirs(local_path)
                     self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'], exclude=prj['exclude'])
+                    if script:
+                        for k, v in env.items():
+                            os.environ[k] = v
+                        os.system(f'{local_path}/{script} content ""')
                     logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
                 else:
                     logger.info(f'Gitlab project {prj["id"]} branch {prj["branch"]} already downloaded')
