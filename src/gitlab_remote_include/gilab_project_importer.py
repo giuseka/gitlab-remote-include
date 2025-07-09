@@ -97,6 +97,7 @@ class GilabProjectImporter:
                     if script:
                         for k, v in env.items():
                             os.environ[k] = v
+                        os.system(f'chmod +x {local_path}/{script}')
                         os.system(f'{local_path}/{script} content ""')
                     logger.info(f'Download gitlab project {prj["id"]} branch {prj["branch"]} in folder {prj["alias"]}')
                 else:
