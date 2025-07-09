@@ -88,9 +88,11 @@ class GilabProjectImporter:
             alias = prj['alias']
             script = prj['script']
             env = prj['env']
-            gitlab_project = self._client.projects.get(prj['id'])
-            local_path = f'{self._base_path}/{alias}'
             try:
+                logger.info(f'### Gitlab project {prj["id"]} branch {prj["branch"]} ### - START')
+                gitlab_project = self._client.projects.get(prj['id'])
+                local_path = f'{self._base_path}/{alias}'
+
                 if not os.path.exists(local_path):
                     os.makedirs(local_path)
                     self._download_gitlab_tree(alias, gitlab_project, branch=prj['branch'], exclude=prj['exclude'])
@@ -104,3 +106,5 @@ class GilabProjectImporter:
                     logger.info(f'Gitlab project {prj["id"]} branch {prj["branch"]} already downloaded')
             except Exception as e:
                 logger.warning(f'Download gitlab project {prj["id"]} branch {prj["branch"]} error: {e}', exc_info=True)
+
+            logger.info(f'### Gitlab project {prj["id"]} branch {prj["branch"]} ### - END')
