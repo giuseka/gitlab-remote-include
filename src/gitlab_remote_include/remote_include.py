@@ -35,7 +35,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
             alias = prj['alias']
             project_id = prj['id']
             project_branch = prj['branch']
-            script = prj['script']
+            script = prj['script'] if 'script' in prj else ''
             env = prj['env'] if 'env' in prj else {}
             exclude = prj['exclude'] if 'exclude' in prj else []
             sgp.add_project(alias, project_id, project_branch=project_branch, exclude=exclude, script=script, env=env)
